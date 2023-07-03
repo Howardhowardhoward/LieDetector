@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "face-api.js": "^0.22.2"
+  },
+  "license": "0BSD",
+  "name": "computer-vision",
+  "version": "1.0.0",
+  "main": "blah.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "description": ""
+}
