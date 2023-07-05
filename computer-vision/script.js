@@ -50,12 +50,18 @@ async function requestFileSystemAccess() {
     console.error('Error requesting file system access:', err);
     }
 }
-    
-    
+
+
+
+
+//POINTS PER FRAME
+//FRAMES PER SECOND
 
 
 
 //startVideo()
+var landmarkPositions = {}
+var landmarkSet = 0
 
 //listener will detect face/collect data
 video.addEventListener('play', () => {
@@ -65,7 +71,7 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
   document.body.append(canvas)
   const displaySize = { width: video.width, height: video.height }
   faceapi.matchDimensions(canvas, displaySize)
-  var landmarkPositions = {}
+  
   //drawing facial mask
   setInterval(async () => {
     const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
@@ -75,8 +81,54 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
     //if(Object.keys(landmarks).length === 0) {
     //    landmarkTotal += landmarks
     //}
-    console.log(landmarks.positions)
-    landmarkPositions += landmarks.positions
+    //console.log(landmarks.positions)
+    const landmarkPositionsImmediate = landmarks.positions.reduce((acc, position, index) => {
+        
+        //LABEL DIFFERENT PARTS OF FACE
+
+        switch(true){
+            case index <= 17:
+                faceType = "jaw";
+                refPoint = 0
+                break;
+            case index <= 22:
+                faceType = "leftEyebrow";
+                refPoint = 18;
+                break;
+            case index <= 27:
+                faceType = "rightEyebrow";
+                refPoint = 23;
+                break;
+            case index <= 36:
+                faceType = "nose";
+                refPoint = 28;
+                break;
+            case index <= 42:
+                faceType = "leftEye";
+                refPoint = 37;
+                break;
+            case index <= 48:
+                faceType = "rightEye";
+                refPoint = 43;
+                break;
+            case index <= 68:
+                faceType = "mouth";
+                refPoint = 49;
+                break;
+            default:
+                faceType = "ERROR";
+                refPoint = 0;
+                break;
+        }
+
+        const key = faceType + `${index + 1 - refPoint}` + "set" + + `${landmarkSet+1}`;
+        acc[key] = { x: position.x, y: position.y };
+        return acc;
+      }, {});
+
+    landmarkSet += 1
+    //console.log(landmarkPositionsImmediate);
+    landmarkPositions = { ...landmarkPositions, ...landmarkPositionsImmediate };
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     faceapi.draw.drawDetections(canvas, resizedDetections)
     faceapi.draw.drawFaceLandmarks(canvas, resizedDetections)
@@ -93,6 +145,8 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
     
     document.getElementById('jsonButton').addEventListener('click', () => {
     const landmarkJSON = JSON.stringify(landmarkPositions);
+    console.log(landmarkPositions);
+    console.log(landmarkJSON);
     const blob = new Blob([landmarkJSON], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
@@ -107,6 +161,7 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
     URL.revokeObjectURL;
     requestFileSystemAccess();
     saveJSONToFile(landmarkJSON);
+    
     
     
   
