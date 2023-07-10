@@ -51,9 +51,23 @@ async function requestFileSystemAccess() {
     }
 }
 
+var port;
+var reader;
+
+document.getElementById('jsonButton').addEventListener('click', () => {
+    async function serialPortConnect() {
+        port = await navigator.serial.requestPort();
+        //wait for serial port to open
+        await port.open({ baudRate: 9600 });
+        reader = port.readable.getReader();
+    }
+    serialPortConnect();
+})
+
 //startVideo()
 var landmarkPositions = {}
 var landmarkSet = 0
+var gsrValues = []
 
 //listener will detect face/collect data
     video.addEventListener('play', () => {
@@ -67,7 +81,46 @@ var landmarkSet = 0
     faceapi.matchDimensions(canvas, displaySize)
   
     //drawing facial mask
+
+    //prompt user to select port
+    //async function getPort(){
+    //    const port = await navigator.serial.requestPort();
+    //    return port;
+    //}
+
+    //const port = getPort();
+    
     setInterval(async () => {
+
+     //READ FROM SERIAL PORTS 
+     
+     
+     const { value, done } = await reader.read();
+     if (done) {
+         // Allow the serial port to be closed later.
+         reader.releaseLock();
+     }
+     // value is a Uint8Array.
+    var gsrString = new TextDecoder().decode(value);
+    
+    gsrValues.push(gsrString);
+
+    /*
+    //wait for serial port to open
+    await port.open({ baudRate: 9600 });
+
+    //READ FROM SERIAL PORTS 
+    const reader = port.readable.getReader();
+    const { value, done } = await reader.read();
+    if (done) {
+        // Allow the serial port to be closed later.
+        reader.releaseLock();
+    }
+    // value is a Uint8Array.
+    console.log(value);
+      */
+
+
     const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
     const resizedDetections = faceapi.resizeResults(detections, displaySize)
 
@@ -76,7 +129,7 @@ var landmarkSet = 0
     const landmarkPositionsImmediate = landmarks.positions.reduce((acc, position, index) => {
         
         //LABEL DIFFERENT PARTS OF FACE
-
+        
         switch(true){
             case index <= 17:
                 faceType = "jaw";
@@ -147,10 +200,39 @@ var landmarkSet = 0
     URL.revokeObjectURL;
     requestFileSystemAccess();
     saveJSONToFile(landmarkJSON);
+
+
+
+
+    //write to file - GSR
+    const gsrJSON = JSON.stringify(gsrValues);
+    const gsrBlob = new Blob([gsrJSON], { type: 'application/json' });
+    const gsrUrl = URL.createObjectURL(gsrBlob);
+
+    //CREATE DOWNLOAD LINK
+    const gsrDownloadLink = document.createElement('a');
+    gsrDownloadLink.href = gsrUrl;
+    gsrDownloadLink.download = 'gsrResults' + (new Date()).getTime().toString() + '.json';
+    document.body.appendChild(gsrDownloadLink);
+
+    //SIMULATE A CLICK TO TRIGGER DOWNLOAD
+    gsrDownloadLink.click();
+
+    //CLEAN UP THE TEMPORARY URL OBJECT
+    URL.revokeObjectURL;
+    saveJSONToFile(gsrJSON);
     
     // Usage: call saveJSONToFile(jsonData) with your JSON data
 
 
+
+    //READ SERIAL
+    if("serial" in navigator){
+        console.log("Supported!")
+    }
+    else{
+        console.log("Not supported")
+    }
 
 
     }
