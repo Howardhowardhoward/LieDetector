@@ -127,7 +127,6 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
       }, {});
 
     landmarkSet += 1
-    //console.log(landmarkPositionsImmediate);
     landmarkPositions = { ...landmarkPositions, ...landmarkPositionsImmediate };
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     faceapi.draw.drawDetections(canvas, resizedDetections)
@@ -143,7 +142,9 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
   //if i want json
     //document.getElementById('jsonButton').addEventListener('click', handleClick(landmarks));
     
-    document.getElementById('jsonButton').addEventListener('click', () => {
+    setTimeout(exportTimer, 5000);
+    /*document.getElementById('jsonButton').addEventListener('click', () => {*/
+    function exportTimer() {
     const landmarkJSON = JSON.stringify(landmarkPositions);
     console.log(landmarkPositions);
     console.log(landmarkJSON);
@@ -186,9 +187,10 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
 
     //dlAnchorElem.click();
     //const json = await faceapi.fetchJson(filename)
+    }
 } ) //end of start click listener
 })
-})
+//event listener })
 
 /*async function handleClick(landmarks) {
     const filename = 'results' + (new Date()).getTime().toString() + '.json'
