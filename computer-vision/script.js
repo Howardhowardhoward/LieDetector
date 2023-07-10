@@ -93,16 +93,22 @@ var gsrValues = []
     setInterval(async () => {
 
      //READ FROM SERIAL PORTS 
+
+    var timeIsUp = false
+    function timer(){
+        timeIsUp = true;
+    }
      
      
      const { value, done } = await reader.read();
-     if (done) {
+     setTimeout(timer, 4950);
+     if (timeIsUp) {
          // Allow the serial port to be closed later.
          reader.releaseLock();
      }
      // value is a Uint8Array.
     var gsrString = new TextDecoder().decode(value);
-    
+
     gsrValues.push(gsrString);
 
     /*
