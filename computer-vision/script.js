@@ -51,37 +51,28 @@ async function requestFileSystemAccess() {
     }
 }
 
-
-
-
-//POINTS PER FRAME
-//FRAMES PER SECOND
-
-
-
 //startVideo()
 var landmarkPositions = {}
 var landmarkSet = 0
 
 //listener will detect face/collect data
-video.addEventListener('play', () => {
-document.getElementById('startButton').addEventListener('click', (startEvent) => {
+    video.addEventListener('play', () => {
+    document.getElementById('startButton').addEventListener('click', (startEvent) => {
+    //for it to unmask? doesn't work
     startEvent.preventDefault();
-  const canvas = faceapi.createCanvasFromMedia(video)
-  document.body.append(canvas)
-  const displaySize = { width: video.width, height: video.height }
-  faceapi.matchDimensions(canvas, displaySize)
+    //video canvas
+    const canvas = faceapi.createCanvasFromMedia(video)
+    document.body.append(canvas)
+    const displaySize = { width: video.width, height: video.height }
+    faceapi.matchDimensions(canvas, displaySize)
   
-  //drawing facial mask
-  setInterval(async () => {
+    //drawing facial mask
+    setInterval(async () => {
     const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
     const resizedDetections = faceapi.resizeResults(detections, displaySize)
+
     //retrieve points on face
     const landmarks = await faceapi.detectFaceLandmarks(video)
-    //if(Object.keys(landmarks).length === 0) {
-    //    landmarkTotal += landmarks
-    //}
-    //console.log(landmarks.positions)
     const landmarkPositionsImmediate = landmarks.positions.reduce((acc, position, index) => {
         
         //LABEL DIFFERENT PARTS OF FACE
@@ -132,15 +123,7 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
     faceapi.draw.drawDetections(canvas, resizedDetections)
     faceapi.draw.drawFaceLandmarks(canvas, resizedDetections)
     faceapi.draw.drawFaceExpressions(canvas, resizedDetections)
-    //faceapi.draw.drawFaceLandmarks(canvas, landmarkPoints)
   }, 100)
-  //retrieve points
-  /*getPoints(async () => {
-    const landmarkPositions = await faceapi.detectFaceLandmarks(video, )
-  })*/
-
-  //if i want json
-    //document.getElementById('jsonButton').addEventListener('click', handleClick(landmarks));
     
     setTimeout(exportTimer, 5000);
     /*document.getElementById('jsonButton').addEventListener('click', () => {*/
@@ -156,44 +139,20 @@ document.getElementById('startButton').addEventListener('click', (startEvent) =>
     downloadLink.href = url;
     downloadLink.download = 'results' + (new Date()).getTime().toString() + '.json';
     document.body.appendChild(downloadLink);
+
     //SIMULATE A CLICK TO TRIGGER DOWNLOAD
     downloadLink.click();
+
     //CLEAN UP THE TEMPORARY URL OBJECT
     URL.revokeObjectURL;
     requestFileSystemAccess();
     saveJSONToFile(landmarkJSON);
     
-    
-    
-  
-  // Usage: call saveJSONToFile(jsonData) with your JSON data
+    // Usage: call saveJSONToFile(jsonData) with your JSON data
 
 
-    //var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(landmarkJSON);
-    //var dlAnchorElem = document.getElementById('jsonButton');
-    //dlAnchorElem.setAttribute("href",     dataStr     );
-    //dlAnchorElem.setAttribute("download", 'results' +  time + '.json');
-
-    //write file   
-    //const fs = require('fs');
-
-    //try {
-    //    fs.writeFileSync('/Users/joe/test.txt', dataStr);
-    //    // file written successfully
-    //    } catch (err) {
-    //        console.error(err);
-    //}
 
 
-    //dlAnchorElem.click();
-    //const json = await faceapi.fetchJson(filename)
     }
 } ) //end of start click listener
 })
-//event listener })
-
-/*async function handleClick(landmarks) {
-    const filename = 'results' + (new Date()).getTime().toString() + '.json'
-    const json = landmarks
-
-}*/
