@@ -39,7 +39,7 @@ async function saveJSONToFile(landmarkJSON) {
     }
     }
 }
-    
+
 // Request permission to access the file system
 async function requestFileSystemAccess() {
     try {
@@ -54,6 +54,7 @@ async function requestFileSystemAccess() {
 var port;
 var reader;
 
+//INITIAL CONNECT SERIAL PORT
 document.getElementById('jsonButton').addEventListener('click', () => {
     async function serialPortConnect() {
         port = await navigator.serial.requestPort();
@@ -92,20 +93,20 @@ var gsrValues = []
     
     setInterval(async () => {
 
-     //READ FROM SERIAL PORTS 
+    //READ FROM SERIAL PORTS 
 
     var timeIsUp = false
     function timer(){
         timeIsUp = true;
     }
-     
-     
+    
+    
      const { value, done } = await reader.read();
      setTimeout(timer, 4950);
      if (timeIsUp) {
          // Allow the serial port to be closed later.
          reader.releaseLock();
-     }
+    }
      // value is a Uint8Array.
     var gsrString = new TextDecoder().decode(value);
 
@@ -171,7 +172,7 @@ var gsrValues = []
                 break;
         }
 
-        const key = faceType + `${index + 1 - refPoint}` + "set" + + `${landmarkSet+1}`;
+        const key = faceType + `${index + 1 - refPoint}`/* + "set" + + `${landmarkSet+1}`*/;    //got rid of sets, unnecessary
         acc[key] = { x: position.x, y: position.y };
         return acc;
       }, {});
@@ -211,7 +212,20 @@ var gsrValues = []
 
 
     //write to file - GSR
-    const gsrJSON = JSON.stringify(gsrValues);
+
+    //first filter data
+    filteredValues = []
+    const pattern = /\d{1,3}\.00/g; // Regular expression pattern
+    gsrValues.forEach((item) => {
+    // Remove "\r\n" characters
+    item = item.replace(/\r\n/g, "");
+    // Filter out numbers not matching the pattern
+    const filteredNumbers = item.match(pattern);
+    filteredValues.push(...filteredNumbers);
+    });
+
+    //Create JSON, blob, URL
+    const gsrJSON = JSON.stringify(filteredValues);
     const gsrBlob = new Blob([gsrJSON], { type: 'application/json' });
     const gsrUrl = URL.createObjectURL(gsrBlob);
 
