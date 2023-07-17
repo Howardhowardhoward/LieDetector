@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script defer src="face-api.min.js"></script>
+    <script defer src="script.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            position: absolute;
+        }
+        #startButton {
+            position: absolute;
+            bottom: 50px;
+            left: 800px;
+        }
+        #jsonButton {
+            position: absolute;
+            bottom: 50px;
+            left: 1000px;
+        }
+        p{
+            position: absolute;
+            bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" width="720" height="560" autoplay muted>
+
+    </video>
+    
+</body>
+<button id="startButton" class="button">start masking</button>
+<button id="jsonButton" class="buttonTwo">connect serial</button>
+<p>FIND 'EXPORT' FILE IN DIRECTORY WHEN PROMPTED</p>
+<!-- <button id="jsonConsole">show json in console</button> -->
+</html>
