@@ -53,48 +53,66 @@ async function requestFileSystemAccess() {
 
 var port;
 var reader;
+let questionBeingAsked = false;
 
 //INITIAL CONNECT SERIAL PORT
-document.getElementById('jsonButton').addEventListener('click', () => {
-    async function serialPortConnect() {
+//document.getElementById('jsonButton').addEventListener('click', () => {
+    /*async function serialPortConnect() {
         port = await navigator.serial.requestPort();
         //wait for serial port to open
         await port.open({ baudRate: 9600 });
         reader = port.readable.getReader();
     }
-    serialPortConnect();
-})
+    serialPortConnect();*/
+//})
 
-//startVideo()
+//IF CAN READ SERIAL
+if("serial" in navigator){
+    console.log("Serial Supported!")
+}
+else{
+    console.log("ERROR - Serial Not Supported")
+}
+
+//startVideo()  
+
 var landmarkPositions = {}
 var landmarkSet = 0
 var gsrValues = []
 
 //listener will detect face/collect data
     video.addEventListener('play', () => {
+        //ON INITIALIZATION BUTTON PRESS
     document.getElementById('startButton').addEventListener('click', (startEvent) => {
-    //for it to unmask? doesn't work
-    startEvent.preventDefault();
-    //video canvas
-    const canvas = faceapi.createCanvasFromMedia(video)
-    document.body.append(canvas)
-    const displaySize = { width: video.width, height: video.height }
-    faceapi.matchDimensions(canvas, displaySize)
-  
-    //drawing facial mask
 
-    //prompt user to select port
-    //async function getPort(){
-    //    const port = await navigator.serial.requestPort();
-    //    return port;
-    //}
-
-    //const port = getPort();
+    //serial port initialization
+    /*async function serialPortConnect() {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });
+    reader = port.readable.getReader();
+    }
+    serialPortConnect();*/
     
+    //video canvas
+    var canvas = faceapi.createCanvasFromMedia(video)
+    document.body.append(canvas)
+    var displaySize = { width: video.width, height: video.height }
+    faceapi.matchDimensions(canvas, displaySize)
+    
+    //ON NEW QUESTION BUTTON PRESS
+    document.getElementById('jsonButton').addEventListener('click', () => {
+    questionBeingAsked = true;  //flag raised positive (undone after exportTimer is called)
+    setTimeout(exportTimer, 5000);  //exportTimer
+    landmarkPositions = {}
+    landmarkSet = 0
+    })
+
+    
+
     setInterval(async () => {
 
     //READ FROM SERIAL PORTS 
-
+    /*if(questionBeingAsked){
     var timeIsUp = false
     function timer(){
         timeIsUp = true;
@@ -111,30 +129,17 @@ var gsrValues = []
     var gsrString = new TextDecoder().decode(value);
 
     gsrValues.push(gsrString);
+    }*/
 
-    /*
-    //wait for serial port to open
-    await port.open({ baudRate: 9600 });
-
-    //READ FROM SERIAL PORTS 
-    const reader = port.readable.getReader();
-    const { value, done } = await reader.read();
-    if (done) {
-        // Allow the serial port to be closed later.
-        reader.releaseLock();
-    }
-    // value is a Uint8Array.
-    console.log(value);
-      */
-
-
-    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
-    const resizedDetections = faceapi.resizeResults(detections, displaySize)
-
+    var detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
+    var resizedDetections = faceapi.resizeResults(detections, displaySize)
+    
     //retrieve points on face
-    const landmarks = await faceapi.detectFaceLandmarks(video)
-    const landmarkPositionsImmediate = landmarks.positions.reduce((acc, position, index) => {
-        
+    var landmarks = await faceapi.detectFaceLandmarks(video)
+
+    if(questionBeingAsked){
+    var landmarkPositionsImmediate = landmarks.positions.reduce((acc, position, index) => {
+
         //LABEL DIFFERENT PARTS OF FACE
         
         switch(true){
@@ -172,30 +177,43 @@ var gsrValues = []
                 break;
         }
 
-        const key = faceType + `${index + 1 - refPoint}`/* + "set" + + `${landmarkSet+1}`*/;    //got rid of sets, unnecessary
+        const key = faceType + `${index + 1 - refPoint}` + "set" + + `${landmarkSet+1}`;    //got rid of sets, unnecessary
         acc[key] = { x: position.x, y: position.y };
+        //console.log(Math.sqrt((position.x)**2 + (position.y)**2))
+        //data = Math.sqrt((position.x)**2 + (position.y)**2)
+        //if(!(key in acc)){
+        //    acc[key] = [];
+        //}
+        //acc[key].push(data);
+           
+            //console.log(Math.sqrt((position.x)**2 + (position.y)**2))
         return acc;
       }, {});
 
     landmarkSet += 1
     landmarkPositions = { ...landmarkPositions, ...landmarkPositionsImmediate };
+    }//end of question being asked functions
+
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     faceapi.draw.drawDetections(canvas, resizedDetections)
     faceapi.draw.drawFaceLandmarks(canvas, resizedDetections)
     faceapi.draw.drawFaceExpressions(canvas, resizedDetections)
   }, 100)
-    
-    setTimeout(exportTimer, 5000);
+//})  //end of new question button
+
     /*document.getElementById('jsonButton').addEventListener('click', () => {*/
     function exportTimer() {
-    const landmarkJSON = JSON.stringify(landmarkPositions);
+    var landmarkJSON = JSON.stringify(landmarkPositions);
     console.log(landmarkPositions);
     console.log(landmarkJSON);
-    const blob = new Blob([landmarkJSON], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    var blob = new Blob([landmarkJSON], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+
+    //STOP NEW QUESTION LOOPING
+    questionBeingAsked = false;
 
     //CREATE DOWNLOAD LINK
-    const downloadLink = document.createElement('a');
+    var downloadLink = document.createElement('a');
     downloadLink.href = url;
     downloadLink.download = 'results' + (new Date()).getTime().toString() + '.json';
     document.body.appendChild(downloadLink);
@@ -212,14 +230,18 @@ var gsrValues = []
 
 
     //write to file - GSR
-
+/*
     //first filter data
     filteredValues = []
+    console.log(gsrValues)
     const pattern = /\d{1,3}\.00/g; // Regular expression pattern
     gsrValues.forEach((item) => {
     // Remove "\r\n" characters
-    item = item.replace(/\r\n/g, "");
+    item = item.replace(/\r\n/g, " ");
+    item = item.split(" ")
+    console.log(item)
     // Filter out numbers not matching the pattern
+    item.forEach(singleString)
     const filteredNumbers = item.match(pattern);
     filteredValues.push(...filteredNumbers);
     });
@@ -240,19 +262,13 @@ var gsrValues = []
 
     //CLEAN UP THE TEMPORARY URL OBJECT
     URL.revokeObjectURL;
-    saveJSONToFile(gsrJSON);
+    saveJSONToFile(gsrJSON);*/
     
     // Usage: call saveJSONToFile(jsonData) with your JSON data
 
 
 
-    //READ SERIAL
-    if("serial" in navigator){
-        console.log("Supported!")
-    }
-    else{
-        console.log("Not supported")
-    }
+    
 
 
     }
