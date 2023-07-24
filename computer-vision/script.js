@@ -54,6 +54,7 @@ async function requestFileSystemAccess() {
 var port;
 var reader;
 let questionBeingAsked = false;
+let questionNumber = 0;
 
 //INITIAL CONNECT SERIAL PORT
 //document.getElementById('jsonButton').addEventListener('click', () => {
@@ -103,8 +104,9 @@ var gsrValues = []
     document.getElementById('jsonButton').addEventListener('click', () => {
     questionBeingAsked = true;  //flag raised positive (undone after exportTimer is called)
     setTimeout(exportTimer, 5000);  //exportTimer
-    landmarkPositions = {}
-    landmarkSet = 0
+    landmarkPositions = {};
+    landmarkSet = 0;
+    questionNumber += 1;
     })
 
     
@@ -139,7 +141,7 @@ var gsrValues = []
 
     if(questionBeingAsked){
     var landmarkPositionsImmediate = landmarks.positions.reduce((acc, position, index) => {
-
+        
         //LABEL DIFFERENT PARTS OF FACE
         
         switch(true){
@@ -177,8 +179,16 @@ var gsrValues = []
                 break;
         }
 
-        const key = faceType + `${index + 1 - refPoint}` + "set" + + `${landmarkSet+1}`;    //got rid of sets, unnecessary
-        acc[key] = { x: position.x, y: position.y };
+        const key = faceType + `${index + 1 - refPoint}`/* + "set" + + `${landmarkSet+1}`*/;    //got rid of sets, unnecessary
+        if (acc.hasOwnProperty(key)) {
+            // if there's a number in the list at the key, push onto array
+            acc[key].push(Math.sqrt((position.x)**2 + (position.y)**2));
+          } else {
+            // if key doesn't exist or  value is not an array, create a new array with the number
+            acc[key] = [Math.sqrt((position.x)**2 + (position.y)**2)];
+          }
+        
+        //acc[key] = { x: position.x, y: position.y };
         //console.log(Math.sqrt((position.x)**2 + (position.y)**2))
         //data = Math.sqrt((position.x)**2 + (position.y)**2)
         //if(!(key in acc)){
@@ -190,8 +200,17 @@ var gsrValues = []
         return acc;
       }, {});
 
-    landmarkSet += 1
-    landmarkPositions = { ...landmarkPositions, ...landmarkPositionsImmediate };
+    //landmarkSet += 1
+    //landmarkPositions = { ...landmarkPositions, ...landmarkPositionsImmediate };
+    for(let mergeKey in landmarkPositionsImmediate)
+    {
+        if(landmarkPositions.hasOwnProperty(mergeKey)) {
+            landmarkPositions[mergeKey].push(landmarkPositionsImmediate[mergeKey]);
+        }
+        else {
+            landmarkPositions[mergeKey] = landmarkPositionsImmediate[mergeKey];
+        }
+    }
     }//end of question being asked functions
 
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
@@ -215,7 +234,7 @@ var gsrValues = []
     //CREATE DOWNLOAD LINK
     var downloadLink = document.createElement('a');
     downloadLink.href = url;
-    downloadLink.download = 'results' + (new Date()).getTime().toString() + '.json';
+    downloadLink.download = 'results' + questionNumber + '.json';
     document.body.appendChild(downloadLink);
 
     //SIMULATE A CLICK TO TRIGGER DOWNLOAD
@@ -254,7 +273,7 @@ var gsrValues = []
     //CREATE DOWNLOAD LINK
     const gsrDownloadLink = document.createElement('a');
     gsrDownloadLink.href = gsrUrl;
-    gsrDownloadLink.download = 'gsrResults' + (new Date()).getTime().toString() + '.json';
+    gsrDownloadLink.download = 'gsrResults' + questionNumber + '.json';
     document.body.appendChild(gsrDownloadLink);
 
     //SIMULATE A CLICK TO TRIGGER DOWNLOAD
