@@ -83,16 +83,17 @@ var gsrValues = []
 
 //listener will detect face/collect data
     video.addEventListener('play', () => {
-        //ON INITIALIZATION BUTTON PRESS
+        
+    //ON INITIALIZATION BUTTON PRESS
     document.getElementById('startButton').addEventListener('click', (startEvent) => {
 
     //serial port initialization
-    /*async function serialPortConnect() {
+    async function serialPortConnect() {
     port = await navigator.serial.requestPort();
     await port.open({ baudRate: 9600 });
     reader = port.readable.getReader();
     }
-    serialPortConnect();*/
+    serialPortConnect();
     
     //video canvas
     var canvas = faceapi.createCanvasFromMedia(video)
@@ -107,6 +108,7 @@ var gsrValues = []
     landmarkPositions = {};
     landmarkSet = 0;
     questionNumber += 1;
+    gsrValues = []
     })
 
     
@@ -114,7 +116,7 @@ var gsrValues = []
     setInterval(async () => {
 
     //READ FROM SERIAL PORTS 
-    /*if(questionBeingAsked){
+    if(questionBeingAsked){
     var timeIsUp = false
     function timer(){
         timeIsUp = true;
@@ -131,7 +133,7 @@ var gsrValues = []
     var gsrString = new TextDecoder().decode(value);
 
     gsrValues.push(gsrString);
-    }*/
+    }
 
     var detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
     var resizedDetections = faceapi.resizeResults(detections, displaySize)
@@ -249,24 +251,73 @@ var gsrValues = []
 
 
     //write to file - GSR
-/*
+
     //first filter data
-    filteredValues = []
+    filteredValuesGSR = []
+    filteredValuesHR = []
     console.log(gsrValues)
-    const pattern = /\d{1,3}\.00/g; // Regular expression pattern
+    //if gsr or hr
+        //blah blah blah
+
+
+
+    const patternGSR = /G\d{1,3}\.00/g; // Regular expression pattern for GSR
+    const patternHR = /H\d{1,3}\.00/g; // Regular expression pattern for HR
     gsrValues.forEach((item) => {
+    var filteredNumbersGSR = []
+    var filteredNumbersHR = []
     // Remove "\r\n" characters
-    item = item.replace(/\r\n/g, " ");
+    item = item.replace(/\r/g, " ");
+    item = item.replace(/\n/g, " ");
+    item = item.replace(/H/g, " H")
     item = item.split(" ")
-    console.log(item)
+    //console.log("After split");
+    //console.log(item);
+    //item.match(pattern);
     // Filter out numbers not matching the pattern
-    item.forEach(singleString)
-    const filteredNumbers = item.match(pattern);
-    filteredValues.push(...filteredNumbers);
+    //item.forEach((splitNumber) => {
+     //   filteredNumbers += splitNumber.match(pattern);
+    //});
+    //filteredNumbers = item.match(pattern);
+    filteredNumbersGSR = item.filter((str) => patternGSR.test(str));
+    //console.log("GSR first filter")
+    //console.log(filteredNumbersGSR)
+    filteredNumbersGSR = filteredNumbersGSR.map((str) => str.replace(/G/g, ''));
+    filteredNumbersGSR = filteredNumbersGSR.filter((str) => (parseInt(str) > 50));
+    filteredNumbersHR = item.filter((str) => patternHR.test(str));
+    filteredNumbersHR = filteredNumbersHR.map((str) => str.replace(/H/g, ''));
+    //console.log("Filtered values");
+    //console.log(filteredNumbersGSR);
+    //console.log(filteredNumbersHR);
+
+    filteredValuesGSR.push(...filteredNumbersGSR);
+    filteredValuesHR.push(...filteredNumbersHR);
     });
 
+
+    //APPEND DATA TO WEBSITE FOR TRANSPARENT READING
+    var gsrParagraph = document.getElementById("gsrRate");
+    var lastElementGSR = filteredValuesGSR[0];
+    if(lastElementGSR !== null){
+    var gsrText = document.createTextNode(" " + lastElementGSR);
+    console.log(lastElementGSR)
+    console.log(gsrText)
+    gsrParagraph.appendChild(gsrText);
+    }
+
+    var hrParagraph = document.getElementById("heartRate");
+    var lastElementHR = filteredValuesHR[0];
+    if(lastElementHR !== null){
+    var hrText = document.createTextNode(" " + lastElementHR);
+    hrParagraph.appendChild(hrText);
+    }
+
+    //GSR FILE
+
+
+
     //Create JSON, blob, URL
-    const gsrJSON = JSON.stringify(filteredValues);
+    const gsrJSON = JSON.stringify(filteredValuesGSR);
     const gsrBlob = new Blob([gsrJSON], { type: 'application/json' });
     const gsrUrl = URL.createObjectURL(gsrBlob);
 
@@ -281,11 +332,30 @@ var gsrValues = []
 
     //CLEAN UP THE TEMPORARY URL OBJECT
     URL.revokeObjectURL;
-    saveJSONToFile(gsrJSON);*/
+    saveJSONToFile(gsrJSON);
     
     // Usage: call saveJSONToFile(jsonData) with your JSON data
 
 
+    //HR FILE
+
+    //Create JSON, blob, URL
+    const hrJSON = JSON.stringify(filteredValuesHR);
+    const hrBlob = new Blob([hrJSON], { type: 'application/json' });
+    const hrUrl = URL.createObjectURL(hrBlob);
+
+    //CREATE DOWNLOAD LINK
+    const hrDownloadLink = document.createElement('a');
+    hrDownloadLink.href = hrUrl;
+    hrDownloadLink.download = 'hrResults' + questionNumber + '.json';
+    document.body.appendChild(hrDownloadLink);
+
+    //SIMULATE A CLICK TO TRIGGER DOWNLOAD
+    hrDownloadLink.click();
+
+    //CLEAN UP THE TEMPORARY URL OBJECT
+    URL.revokeObjectURL;
+    saveJSONToFile(hrJSON);
 
     
 
